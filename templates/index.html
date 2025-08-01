@@ -1,0 +1,715 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RAG Document Chat System</title>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+            display: grid;
+            grid-template-columns: 350px 1fr;
+            gap: 20px;
+            height: 100vh;
+        }
+
+        .sidebar {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            overflow-y: auto;
+        }
+
+        .main-content {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header h1 {
+            color: #4a5568;
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: #718096;
+            font-size: 1.1em;
+        }
+
+        .section {
+            margin-bottom: 25px;
+        }
+
+        .section h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.3em;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .user-id-section {
+            margin-bottom: 20px;
+        }
+
+        .input-group {
+            margin-bottom: 15px;
+        }
+
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #4a5568;
+        }
+
+        .input-group input {
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+        }
+
+        .input-group input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .file-upload {
+            border: 2px dashed #cbd5e0;
+            border-radius: 8px;
+            padding: 20px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            background: #f7fafc;
+        }
+
+        .file-upload:hover {
+            border-color: #667eea;
+            background: #edf2f7;
+        }
+
+        .file-upload.dragover {
+            border-color: #667eea;
+            background: #e6fffa;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 12px 25px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 16px;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            width: 100%;
+            margin-top: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .upload-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+            box-shadow: none;
+        }
+
+        .documents-list {
+            max-height: 200px;
+            overflow-y: auto;
+        }
+
+        .document-item {
+            background: #f7fafc;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .document-name {
+            font-weight: 600;
+            color: #4a5568;
+            font-size: 14px;
+        }
+
+        .document-info {
+            font-size: 12px;
+            color: #718096;
+            margin-top: 2px;
+        }
+
+        .chat-container {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .chat-messages {
+            flex: 1;
+            overflow-y: auto;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            min-height: 400px;
+        }
+
+        .message {
+            margin-bottom: 20px;
+            animation: fadeIn 0.3s ease-in;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+            text-align: right;
+        }
+
+        .message.ai {
+            text-align: left;
+        }
+
+        .message-content {
+            display: inline-block;
+            padding: 15px 20px;
+            border-radius: 20px;
+            max-width: 80%;
+            word-wrap: break-word;
+        }
+
+        .message.user .message-content {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+        }
+
+        .message.ai .message-content {
+            background: white;
+            color: #4a5568;
+            border: 1px solid #e2e8f0;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .query-form {
+            display: flex;
+            gap: 10px;
+        }
+
+        .query-input {
+            flex: 1;
+            padding: 15px;
+            border: 2px solid #e2e8f0;
+            border-radius: 25px;
+            font-size: 16px;
+            resize: none;
+            min-height: 50px;
+            max-height: 120px;
+        }
+
+        .query-input:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+        }
+
+        .send-btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            cursor: pointer;
+            font-size: 18px;
+            transition: all 0.3s ease;
+            align-self: flex-end;
+        }
+
+        .send-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .send-btn:disabled {
+            background: #a0aec0;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .status {
+            padding: 10px;
+            border-radius: 6px;
+            margin: 10px 0;
+            font-size: 14px;
+        }
+
+        .status.success {
+            background: #f0fff4;
+            color: #22543d;
+            border: 1px solid #9ae6b4;
+        }
+
+        .status.error {
+            background: #fed7d7;
+            color: #742a2a;
+            border: 1px solid #fc8181;
+        }
+
+        .status.info {
+            background: #ebf8ff;
+            color: #2c5282;
+            border: 1px solid #90cdf4;
+        }
+
+        .source-info {
+            margin-top: 10px;
+            padding: 10px;
+            background: #f0f9ff;
+            border-radius: 6px;
+            border-left: 4px solid #0ea5e9;
+            font-size: 12px;
+            color: #0c4a6e;
+        }
+
+        .loading {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: #718096;
+        }
+
+        .spinner {
+            width: 20px;
+            height: 20px;
+            border: 2px solid #e2e8f0;
+            border-top: 2px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .delete-btn {
+            background: #e53e3e;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        .delete-btn:hover {
+            background: #c53030;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                grid-template-columns: 1fr;
+                grid-template-rows: auto 1fr;
+                height: auto;
+                min-height: 100vh;
+            }
+            
+            .sidebar {
+                order: 2;
+            }
+            
+            .main-content {
+                order: 1;
+                min-height: 500px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Sidebar -->
+        <div class="sidebar">
+            <div class="header">
+                <h2><i class="fas fa-file-alt"></i> Document Manager</h2>
+            </div>
+
+            <!-- User ID Section -->
+            <div class="section">
+                <h3><i class="fas fa-user"></i> User ID</h3>
+                <div class="input-group">
+                    <label for="userId">Enter your User ID:</label>
+                    <input type="text" id="userId" placeholder="e.g., user123" value="user123">
+                </div>
+            </div>
+
+            <!-- File Upload Section -->
+            <div class="section">
+                <h3><i class="fas fa-upload"></i> Upload Document</h3>
+                <div class="file-upload" id="fileUpload">
+                    <i class="fas fa-cloud-upload-alt" style="font-size: 2em; color: #667eea; margin-bottom: 10px;"></i>
+                    <p>Drag & drop PDF files here or click to browse</p>
+                    <input type="file" id="fileInput" accept=".pdf" style="display: none;">
+                    <button class="upload-btn" id="uploadBtn" disabled>
+                        <i class="fas fa-upload"></i> Upload PDF
+                    </button>
+                </div>
+                <div id="uploadStatus"></div>
+            </div>
+
+            <!-- Documents List Section -->
+            <div class="section">
+                <h3><i class="fas fa-list"></i> Your Documents</h3>
+                <div id="documentsList" class="documents-list">
+                    <p style="color: #718096; text-align: center; padding: 20px;">No documents uploaded yet</p>
+                </div>
+                <button class="delete-btn" id="deleteAllBtn" style="display: none;">
+                    <i class="fas fa-trash"></i> Delete All Documents
+                </button>
+            </div>
+        </div>
+
+        <!-- Main Chat Area -->
+        <div class="main-content">
+            <div class="header">
+                <h1><i class="fas fa-comments"></i> RAG Chat System</h1>
+                <p>Ask questions about your uploaded documents</p>
+            </div>
+
+            <div class="chat-container">
+                <div class="chat-messages" id="chatMessages">
+                    <div class="message ai">
+                        <div class="message-content">
+                            <i class="fas fa-robot"></i> Welcome! Upload a PDF document and start asking questions about its content.
+                        </div>
+                    </div>
+                </div>
+
+                <form class="query-form" id="queryForm">
+                    <textarea 
+                        class="query-input" 
+                        id="queryInput" 
+                        placeholder="Ask a question about your documents..."
+                        rows="2"
+                    ></textarea>
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        <i class="fas fa-paper-plane"></i>
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const userId = document.getElementById('userId');
+        const fileInput = document.getElementById('fileInput');
+        const fileUpload = document.getElementById('fileUpload');
+        const uploadBtn = document.getElementById('uploadBtn');
+        const uploadStatus = document.getElementById('uploadStatus');
+        const documentsList = document.getElementById('documentsList');
+        const chatMessages = document.getElementById('chatMessages');
+        const queryForm = document.getElementById('queryForm');
+        const queryInput = document.getElementById('queryInput');
+        const sendBtn = document.getElementById('sendBtn');
+        const deleteAllBtn = document.getElementById('deleteAllBtn');
+
+        // File upload functionality
+        fileUpload.addEventListener('click', () => fileInput.click());
+        fileUpload.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            fileUpload.classList.add('dragover');
+        });
+        fileUpload.addEventListener('dragleave', () => {
+            fileUpload.classList.remove('dragover');
+        });
+        fileUpload.addEventListener('drop', (e) => {
+            e.preventDefault();
+            fileUpload.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                fileInput.files = files;
+                uploadBtn.disabled = false;
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            uploadBtn.disabled = e.target.files.length === 0;
+        });
+
+        uploadBtn.addEventListener('click', uploadDocument);
+        deleteAllBtn.addEventListener('click', deleteAllDocuments);
+
+        // Query form submission
+        queryForm.addEventListener('submit', (e) => {
+            e.preventDefault();
+            sendQuery();
+        });
+
+        // Auto-resize textarea
+        queryInput.addEventListener('input', function() {
+            this.style.height = 'auto';
+            this.style.height = Math.min(this.scrollHeight, 120) + 'px';
+        });
+
+        // User ID change handler
+        userId.addEventListener('change', loadUserDocuments);
+
+        // Functions
+        async function uploadDocument() {
+            const userIdValue = userId.value.trim();
+            const file = fileInput.files[0];
+
+            if (!userIdValue) {
+                showStatus('Please enter a User ID', 'error');
+                return;
+            }
+
+            if (!file) {
+                showStatus('Please select a PDF file', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('user_id', userIdValue);
+
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Uploading...';
+
+            try {
+                const response = await fetch('/upload-document', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showStatus(`Document uploaded successfully! ${result.chunks_processed} chunks processed.`, 'success');
+                    fileInput.value = '';
+                    uploadBtn.disabled = true;
+                    uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload PDF';
+                    loadUserDocuments();
+                } else {
+                    showStatus(`Upload failed: ${result.detail}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Upload error: ${error.message}`, 'error');
+            } finally {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Upload PDF';
+            }
+        }
+
+        async function sendQuery() {
+            const userIdValue = userId.value.trim();
+            const query = queryInput.value.trim();
+
+            if (!userIdValue) {
+                showStatus('Please enter a User ID', 'error');
+                return;
+            }
+
+            if (!query) {
+                showStatus('Please enter a question', 'error');
+                return;
+            }
+
+            // Add user message
+            addMessage(query, 'user');
+            queryInput.value = '';
+            queryInput.style.height = 'auto';
+
+            // Show loading
+            const loadingId = addMessage('<div class="loading"><div class="spinner"></div> Processing your question...</div>', 'ai');
+            
+            sendBtn.disabled = true;
+
+            try {
+                const response = await fetch('/query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        query: query,
+                        user_id: userIdValue
+                    })
+                });
+
+                const result = await response.json();
+
+                // Remove loading message
+                document.getElementById(loadingId).remove();
+
+                if (response.ok) {
+                    let aiResponse = result.ai_response;
+                    
+                    // Add source information if available
+                    if (result.source_chunks && result.source_chunks.length > 0) {
+                        const sourceInfo = `
+                            
+                        `;
+                        aiResponse += sourceInfo;
+                    }
+
+                    addMessage(aiResponse, 'ai');
+                } else {
+                    addMessage(`Error: ${result.detail}`, 'ai');
+                }
+            } catch (error) {
+                document.getElementById(loadingId).remove();
+                addMessage(`Error: ${error.message}`, 'ai');
+            } finally {
+                sendBtn.disabled = false;
+            }
+        }
+
+        async function loadUserDocuments() {
+            const userIdValue = userId.value.trim();
+            
+            if (!userIdValue) {
+                documentsList.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px;">Enter a User ID to see documents</p>';
+                deleteAllBtn.style.display = 'none';
+                return;
+            }
+
+            try {
+                const response = await fetch(`/user-documents/${userIdValue}`);
+                const result = await response.json();
+
+                if (response.ok && result.documents.length > 0) {
+                    documentsList.innerHTML = result.documents.map(doc => `
+                        <div class="document-item">
+                            <div class="document-name"><i class="fas fa-file-pdf"></i> ${doc.filename}</div>
+                            <div class="document-info">${doc.chunks} chunks processed</div>
+                        </div>
+                    `).join('');
+                    deleteAllBtn.style.display = 'block';
+                } else {
+                    documentsList.innerHTML = '<p style="color: #718096; text-align: center; padding: 20px;">No documents found for this user</p>';
+                    deleteAllBtn.style.display = 'none';
+                }
+            } catch (error) {
+                documentsList.innerHTML = '<p style="color: #e53e3e; text-align: center; padding: 20px;">Error loading documents</p>';
+                deleteAllBtn.style.display = 'none';
+            }
+        }
+
+        async function deleteAllDocuments() {
+            const userIdValue = userId.value.trim();
+            
+            if (!userIdValue) {
+                showStatus('Please enter a User ID', 'error');
+                return;
+            }
+
+            if (!confirm('Are you sure you want to delete all documents? This action cannot be undone.')) {
+                return;
+            }
+
+            deleteAllBtn.disabled = true;
+            deleteAllBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Deleting...';
+
+            try {
+                const response = await fetch(`/user-documents/${userIdValue}`, {
+                    method: 'DELETE'
+                });
+
+                const result = await response.json();
+
+                if (response.ok) {
+                    showStatus(`Successfully deleted ${result.deleted_chunks} chunks`, 'success');
+                    loadUserDocuments();
+                } else {
+                    showStatus(`Delete failed: ${result.message}`, 'error');
+                }
+            } catch (error) {
+                showStatus(`Delete error: ${error.message}`, 'error');
+            } finally {
+                deleteAllBtn.disabled = false;
+                deleteAllBtn.innerHTML = '<i class="fas fa-trash"></i> Delete All Documents';
+            }
+        }
+
+        function addMessage(content, sender) {
+            const messageId = 'msg_' + Date.now();
+            const messageDiv = document.createElement('div');
+            messageDiv.id = messageId;
+            messageDiv.className = `message ${sender}`;
+            messageDiv.innerHTML = `<div class="message-content">${content}</div>`;
+            
+            chatMessages.appendChild(messageDiv);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+            
+            return messageId;
+        }
+
+        function showStatus(message, type) {
+            uploadStatus.innerHTML = `<div class="status ${type}">${message}</div>`;
+            setTimeout(() => {
+                uploadStatus.innerHTML = '';
+            }, 5000);
+        }
+
+        // Initialize
+        loadUserDocuments();
+
+        // Enter key handling for query input
+        queryInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+                e.preventDefault();
+                sendQuery();
+            }
+        });
+    </script>
+</body>
+</html>
