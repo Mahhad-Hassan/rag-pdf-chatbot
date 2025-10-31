@@ -16,8 +16,8 @@ from fastapi import Request
 import uvicorn
 
 # Environment variables
-OPENAI_API_KEY = "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"
-PINECONE_API_KEY = "pcsk_65Adq8_8KzUpgWs1VBwKHpiN421XbnCULmfRd4sQpuQ7aSmYKQtfbhBsM4AYHSwXK89511"
+OPENAI_API_KEY = "Use Valid API"
+PINECONE_API_KEY = "Use Valid Api"
 INDEX_NAME = "uno-rag"
 ENVIRONMENT = "us-east-1"
 
