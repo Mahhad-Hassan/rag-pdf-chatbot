@@ -41,12 +41,12 @@ case "$(uname)" in
     CYGWIN*|MSYS*|MINGW*)
         # transform D:\path\to\venv to /d/path/to/venv on MSYS and MINGW
         # and to /cygdrive/d/path/to/venv on Cygwin
-        VIRTUAL_ENV=$(cygpath 'F:\RAG3.0\rag')
+        VIRTUAL_ENV=$(cygpath 'D:\Python Pract\github\Document-Restricted-RAG\rag')
         export VIRTUAL_ENV
         ;;
     *)
         # use the path as-is
-        export VIRTUAL_ENV='F:\RAG3.0\rag'
+        export VIRTUAL_ENV='D:\Python Pract\github\Document-Restricted-RAG\rag'
         ;;
 esac
 
@@ -54,7 +54,7 @@ _OLD_VIRTUAL_PATH="$PATH"
 PATH="$VIRTUAL_ENV/"Scripts":$PATH"
 export PATH
 
-VIRTUAL_ENV_PROMPT='(rag) '
+VIRTUAL_ENV_PROMPT=rag
 export VIRTUAL_ENV_PROMPT
 
 # unset PYTHONHOME if set
@@ -67,7 +67,7 @@ fi
 
 if [ -z "${VIRTUAL_ENV_DISABLE_PROMPT:-}" ] ; then
     _OLD_VIRTUAL_PS1="${PS1:-}"
-    PS1="("'(rag) '") ${PS1:-}"
+    PS1="("rag") ${PS1:-}"
     export PS1
 fi
 
